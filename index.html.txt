@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการสต็อก</title>
+    <!-- โหลด LINE LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: 'Kanit', sans-serif; padding: 20px; background-color: #f4f6f9; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        label { font-weight: bold; margin-top: 10px; display: block; color: #555; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; background-color: #06C755; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #05b04a; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📦 จัดการสต็อกสินค้า</h2>
+        
+        <label>เลือกรายการที่ต้องการ:</label>
+        <select id="action" onchange="updateForm()">
+            <option value="check">🔍 เช็กสต็อก</option>
+            <option value="in">📥 รับของเข้า</option>
+            <option value="out">📤 ขายออก</option>
+        </select>
+
+        <label>รหัสสินค้า (SKU):</label>
+        <input type="text" id="sku" placeholder="เช่น A001" required>
+
+        <div id="div-qty" class="hidden">
+            <label>จำนวน (ชิ้น):</label>
+            <input type="number" id="qty" placeholder="เช่น 100">
+        </div>
+
+        <div id="div-cost" class="hidden">
+            <label>ต้นทุนต่อชิ้น (บาท):</label>
+            <input type="number" id="cost" placeholder="เช่น 150">
+        </div>
+
+        <div id="div-name" class="hidden">
+            <label>ชื่อสินค้า (ถ้าเป็นสินค้าใหม่):</label>
+            <input type="text" id="name" placeholder="เช่น ยาสระผม">
+        </div>
+
+        <button onclick="sendData()">ส่งข้อมูลเข้าแชท</button>
+    </div>
+
+    <script>
+        // LIFF ID ของคุณ
+        const myLiffId = "2011847892-2dn9Db29"; 
+
+        // เริ่มต้นการทำงานของ LIFF
+        liff.init({ liffId: myLiffId }).catch(err => console.error(err));
+
+        // ฟังก์ชันซ่อน/โชว์ ช่องกรอกข้อมูลตามประเภทที่เลือก
+        function updateForm() {
+            const action = document.getElementById("action").value;
+            document.getElementById("div-qty").className = (action === "in" || action === "out") ? "" : "hidden";
+            document.getElementById("div-cost").className = (action === "in") ? "" : "hidden";
+            document.getElementById("div-name").className = (action === "in") ? "" : "hidden";
+        }
+
+        // ฟังก์ชันตอนกดปุ่ม "ส่งข้อมูลเข้าแชท"
+        function sendData() {
+            const action = document.getElementById("action").value;
+            const sku = document.getElementById("sku").value.trim().toUpperCase();
+            const qty = document.getElementById("qty").value;
+            const cost = document.getElementById("cost").value;
+            const name = document.getElementById("name").value.trim();
+
+            if (!sku) return alert("กรุณาระบุรหัส SKU ครับ");
+
+            let messageText = "";
+
+            if (action === "check") {
+                messageText = `? ${sku}`;
+            } else if (action === "in") {
+                if (!qty || !cost) return alert("กรุณาระบุจำนวนและต้นทุนครับ");
+                messageText = `+ ${sku} ${qty} ${cost} ${name}`.trim();
+            } else if (action === "out") {
+                if (!qty) return alert("กรุณาระบุจำนวนที่ขายออกครับ");
+                messageText = `- ${sku} ${qty}`;
+            }
+
+            // สั่งให้ LIFF พิมพ์ข้อความลงในแชทแทนเซลส์ แล้วปิดหน้าต่าง
+            liff.sendMessages([{ type: 'text', text: messageText }])
+                .then(() => liff.closeWindow())
+                .catch(err => alert("เกิดข้อผิดพลาด: " + err));
+        }
+
+        // เซ็ตหน้าจอเริ่มต้น
+        updateForm();
+    </script>
+</body>
+</html>
